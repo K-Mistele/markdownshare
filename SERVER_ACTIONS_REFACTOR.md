@@ -25,9 +25,9 @@ These functions are now **NOT** server actions and can be used directly in RSC:
 - `canUserEditDocument()`
 
 ### 3. **Server Actions** (src/lib/actions.ts)
-These functions remain server actions for mutations:
+These functions are server actions for mutations (called directly from client components):
 - `createDocument()`
-- `updateDocument()`
+- `updateDocument()` - Used directly in DocumentClient component
 - `deleteDocument()`
 - `createUser()`
 - `updateUser()`
@@ -37,6 +37,8 @@ These functions remain server actions for mutations:
 - `createComment()`
 - `updateComment()`
 - `deleteComment()`
+
+**Note**: Server actions are called directly from client components, NOT from API routes.
 
 ### 4. **Page Components Refactoring**
 
@@ -62,9 +64,10 @@ These functions remain server actions for mutations:
 - `src/components/error-boundary.tsx` - Handles errors thrown by client components
 
 ### 5. **API Routes Updates**
-Updated API routes to use server actions for mutations:
-- `src/app/api/documents/route.ts` - Uses `createDocument()` server action
-- `src/app/api/documents/[id]/route.ts` - Uses `updateDocument()` and `deleteDocument()` server actions
+Updated API routes to use direct database operations (NOT server actions):
+- `src/app/api/documents/route.ts` - Direct database insert for document creation
+- `src/app/api/documents/[id]/route.ts` - Direct database update/delete operations
+- **Important**: Server actions cannot be called from API routes - they're for client components only
 
 ### 6. **Benefits Achieved**
 
@@ -104,7 +107,16 @@ Updated API routes to use server actions for mutations:
 │  Client Component│───▶│  Server Actions  │───▶│  Database       │
 │  (Browser + use)│    │  (src/lib/actions)│    │                 │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
+
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│  API Routes     │───▶│  Direct DB Ops   │───▶│  Database       │
+│  (Server)       │    │  (NOT actions)   │    │                 │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
 ```
+
+**Key Rule**: 
+- **Server Actions**: Called directly from client components
+- **API Routes**: Use direct database operations, NOT server actions
 
 ### Suspense & `use` Hook Pattern
 

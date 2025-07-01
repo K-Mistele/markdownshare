@@ -3,7 +3,7 @@
 import { use } from "react";
 import { MarkdownEditor } from "@/src/components/editor/markdown-editor";
 import { updateDocument } from "@/src/lib/actions";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 
 interface Document {
 	id: string;
@@ -30,7 +30,6 @@ interface DocumentClientProps {
 
 export function DocumentClient({ documentPromise, canEditPromise, user }: DocumentClientProps) {
 	const [saving, setSaving] = useState(false);
-	const [isPending, startTransition] = useTransition();
 
 	// Use the React 19 'use' hook to unwrap the promises
 	// These will suspend the component until the promises resolve
@@ -52,19 +51,17 @@ export function DocumentClient({ documentPromise, canEditPromise, user }: Docume
 
 		setSaving(true);
 		try {
-			// Use server action for updating document
-			startTransition(async () => {
-				const updatedDocument = await updateDocument(document.id, { 
-					title, 
-					content 
-				});
-				
-				if (updatedDocument) {
-					setLocalDocument(updatedDocument);
-				} else {
-					throw new Error("Failed to save document");
-				}
+			// Use server action for updating document directly
+			const updatedDocument = await updateDocument(document.id, { 
+				title, 
+				content 
 			});
+			
+			if (updatedDocument) {
+				setLocalDocument(updatedDocument);
+			} else {
+				throw new Error("Failed to save document");
+			}
 		} catch (error) {
 			console.error("Error saving document:", error);
 			throw error;

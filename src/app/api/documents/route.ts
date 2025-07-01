@@ -1,6 +1,7 @@
 import { auth } from "@/src/lib/auth";
 import { getUserDocuments } from "@/src/lib/data";
-import { createDocument } from "@/src/lib/actions";
+import { db } from "@/src/lib/db";
+import { documents } from "@/src/lib/db/schema";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 
@@ -45,12 +46,19 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		const document = await createDocument({
-			title,
-			content,
-			authorId: session.user.id,
-			visibility,
-		});
+		const result = await db
+			.insert(documents)
+			.values({
+				title,
+				content,
+				authorId: session.user.id,
+				visibility,
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
+			})
+			.returning();
+
+		const document = result[0];
 
 		if (!document) {
 			return NextResponse.json(

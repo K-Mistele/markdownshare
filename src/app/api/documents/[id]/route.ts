@@ -4,10 +4,9 @@ import {
 	canUserEditDocument,
 	getDocument,
 } from "@/src/lib/data";
-import {
-	deleteDocument,
-	updateDocument,
-} from "@/src/lib/actions";
+import { db } from "@/src/lib/db";
+import { documents } from "@/src/lib/db/schema";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 
@@ -53,16 +52,36 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
 	try {
+		const session = await auth.api.getSession({
+			headers: await headers(),
+		});
+
+		if (!session) {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
+
+		// Check if user can edit this document
+		const canEdit = await canUserEditDocument(params.id, session.user.id);
+		if (!canEdit) {
+			return NextResponse.json({ error: "Access denied" }, { status: 403 });
+		}
+
 		const body = await request.json();
 		const { title, content, visibility } = body;
 
-		const updates: any = {};
+		const updates: any = { updatedAt: new Date().toISOString() };
 		if (title !== undefined) updates.title = title;
 		if (content !== undefined) updates.content = content;
 		if (visibility !== undefined) updates.visibility = visibility;
 
-		// Use server action for updating document (handles auth internally)
-		const document = await updateDocument(params.id, updates);
+		// Direct database update
+		const result = await db
+			.update(documents)
+			.set(updates)
+			.where(eq(documents.id, params.id))
+			.returning();
+
+		const document = result[0];
 		if (!document) {
 			return NextResponse.json(
 				{ error: "Failed to update document" },
@@ -73,12 +92,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 		return NextResponse.json({ document });
 	} catch (error) {
 		console.error("Error updating document:", error);
-		if (error instanceof Error && error.message.includes("Authentication required")) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-		}
-		if (error instanceof Error && error.message.includes("Access denied")) {
-			return NextResponse.json({ error: "Access denied" }, { status: 403 });
-		}
 		return NextResponse.json(
 			{ error: "Internal server error" },
 			{ status: 500 },
@@ -88,24 +101,34 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
 	try {
-		// Use server action for deleting document (handles auth internally)
-		const success = await deleteDocument(params.id);
-		if (!success) {
+		const session = await auth.api.getSession({
+			headers: await headers(),
+		});
+
+		if (!session) {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
+
+		// Check if document exists and get its author
+		const document = await getDocument(params.id);
+		if (!document) {
 			return NextResponse.json(
-				{ error: "Failed to delete document" },
-				{ status: 500 },
+				{ error: "Document not found" },
+				{ status: 404 },
 			);
 		}
+
+		// Only the author can delete a document
+		if (document.authorId !== session.user.id) {
+			return NextResponse.json({ error: "Access denied" }, { status: 403 });
+		}
+
+		// Direct database delete
+		await db.delete(documents).where(eq(documents.id, params.id));
 
 		return NextResponse.json({ success: true });
 	} catch (error) {
 		console.error("Error deleting document:", error);
-		if (error instanceof Error && error.message.includes("Authentication required")) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-		}
-		if (error instanceof Error && error.message.includes("Access denied")) {
-			return NextResponse.json({ error: "Access denied" }, { status: 403 });
-		}
 		return NextResponse.json(
 			{ error: "Internal server error" },
 			{ status: 500 },
