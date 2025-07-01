@@ -1,5 +1,6 @@
 "use client";
 
+import { use } from "react";
 import { MarkdownEditor } from "@/src/components/editor/markdown-editor";
 import { updateDocument } from "@/src/lib/actions";
 import { useState, useTransition } from "react";
@@ -8,10 +9,10 @@ interface Document {
 	id: string;
 	title: string;
 	content: string;
-	authorId: string;
-	visibility: "public" | "private" | "link_only" | "password_protected";
-	createdAt: string;
-	updatedAt: string;
+	authorId: string | null;
+	visibility: string | null;
+	createdAt: string | null;
+	updatedAt: string | null;
 }
 
 interface User {
@@ -22,14 +23,25 @@ interface User {
 }
 
 interface DocumentClientProps {
-	document: Document;
-	canEdit: boolean;
+	documentPromise: Promise<Document | null>;
+	canEditPromise: Promise<boolean>;
 	user: User | null;
 }
 
-export function DocumentClient({ document, canEdit, user }: DocumentClientProps) {
+export function DocumentClient({ documentPromise, canEditPromise, user }: DocumentClientProps) {
 	const [saving, setSaving] = useState(false);
 	const [isPending, startTransition] = useTransition();
+
+	// Use the React 19 'use' hook to unwrap the promises
+	// These will suspend the component until the promises resolve
+	const document = use(documentPromise);
+	const canEdit = use(canEditPromise);
+
+	// Handle document not found
+	if (!document) {
+		throw new Error("Document not found");
+	}
+
 	const [localDocument, setLocalDocument] = useState(document);
 
 	const handleSave = async (content: string, title: string) => {

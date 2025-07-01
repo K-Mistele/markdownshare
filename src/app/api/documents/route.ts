@@ -1,5 +1,6 @@
 import { auth } from "@/src/lib/auth";
-import { createDocument, getUserDocuments } from "@/src/lib/database";
+import { getUserDocuments } from "@/src/lib/data";
+import { createDocument } from "@/src/lib/actions";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
 		const document = await createDocument({
 			title,
 			content,
-			author_id: session.user.id,
+			authorId: session.user.id,
 			visibility,
 		});
 

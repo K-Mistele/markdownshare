@@ -44,22 +44,22 @@ These functions remain server actions for mutations:
 - **Before**: Client component using `useEffect` and `fetch()`
 - **After**: Async server component that:
   - Checks authentication on server
-  - Fetches data using `getUserDocuments()` directly
-  - Passes data as props to `<DashboardClient>`
-  - Uses `<Suspense>` for loading states
+  - Creates data fetching promise using `getUserDocuments()` (NOT awaited)
+  - Passes **promise** as prop to `<DashboardClient>`
+  - Uses `<Suspense>` wrapper with `<ErrorBoundary>` for loading/error states
 
 #### Document Page (`src/app/document/[id]/page.tsx`)  
 - **Before**: Client component using `useEffect` and `fetch()`
 - **After**: Async server component that:
   - Checks authentication on server
-  - Fetches document using `getDocument()` directly
-  - Checks edit permissions with `canUserEditDocument()`
-  - Passes data as props to `<DocumentClient>`
-  - Uses `<Suspense>` for loading states
+  - Creates promises using `getDocument()` and `canUserEditDocument()` (NOT awaited)
+  - Passes **promises** as props to `<DocumentClient>`
+  - Uses `<Suspense>` wrapper with `<ErrorBoundary>` for loading/error states
 
 #### Client Components
-- `src/app/dashboard/dashboard-client.tsx` - UI for dashboard
-- `src/app/document/[id]/document-client.tsx` - UI for document editor with server action integration
+- `src/app/dashboard/dashboard-client.tsx` - Receives promise, uses React 19 `use()` hook to unwrap data
+- `src/app/document/[id]/document-client.tsx` - Receives promises, uses React 19 `use()` hook to unwrap data
+- `src/components/error-boundary.tsx` - Handles errors thrown by client components
 
 ### 5. **API Routes Updates**
 Updated API routes to use server actions for mutations:
@@ -77,6 +77,9 @@ Updated API routes to use server actions for mutations:
 - Server-side data fetching reduces client-side requests
 - Better caching with React's `cache()` function
 - Faster initial page loads
+- **Parallel data fetching**: Multiple promises can resolve concurrently
+- **Streaming**: Suspense enables progressive rendering and streaming
+- **No waterfalls**: Data fetching happens immediately, not after component mounts
 
 ✅ **Better Developer Experience**:
 - Type-safe data passing between server and client
@@ -96,22 +99,55 @@ Updated API routes to use server actions for mutations:
 │  (Server)       │    │  (src/lib/data)  │    │                 │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
          │
-         ▼ (props)
+         ▼ (promise props)
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │  Client Component│───▶│  Server Actions  │───▶│  Database       │
-│  (Browser)      │    │  (src/lib/actions)│    │                 │
+│  (Browser + use)│    │  (src/lib/actions)│    │                 │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
+```
+
+### Suspense & `use` Hook Pattern
+
+The proper React 19 pattern implemented:
+
+1. **Server Component**: Creates promises but does NOT await them
+2. **Pass Promises**: Promises passed as props to client components
+3. **Suspense Boundary**: Wraps client component for loading states
+4. **Error Boundary**: Wraps Suspense for error handling
+5. **Client Component**: Uses `use()` hook to unwrap promises
+6. **Automatic Suspension**: React suspends until promises resolve
+
+```typescript
+// ✅ CORRECT: Server Component
+export default async function Page() {
+  const dataPromise = getData(); // Don't await!
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<Loading />}>
+        <ClientComponent dataPromise={dataPromise} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
+
+// ✅ CORRECT: Client Component
+export function ClientComponent({ dataPromise }: { dataPromise: Promise<Data> }) {
+  const data = use(dataPromise); // React 19 use hook
+  return <div>{data.title}</div>;
+}
 ```
 
 ## Migration Checklist
 
 - [x] Split database functions into data fetching vs server actions
-- [x] Convert dashboard page to async RSC
-- [x] Convert document page to async RSC  
-- [x] Create client components for UI
-- [x] Update API routes to use server actions
+- [x] Convert dashboard page to async RSC with promise-based data fetching
+- [x] Convert document page to async RSC with promise-based data fetching
+- [x] Create client components using React 19 `use()` hook for promise unwrapping
+- [x] Implement proper Suspense boundaries for loading states
+- [x] Add Error Boundary components for error handling
+- [x] Update API routes to use server actions for mutations
 - [x] Maintain backward compatibility through re-exports
-- [x] Add proper error handling and authentication checks
+- [x] Add proper authentication checks on server before data fetching
 
 ## Next Steps
 

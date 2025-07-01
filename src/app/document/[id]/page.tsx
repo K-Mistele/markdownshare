@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { auth } from "@/src/lib/auth";
 import { getDocument, canUserEditDocument } from "@/src/lib/data";
 import { DocumentClient } from "./document-client";
+import { ErrorBoundary } from "@/src/components/error-boundary";
 
 interface DocumentPageProps {
 	params: {
@@ -17,23 +18,16 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
 		headers: await headers(),
 	});
 
-	// For document access, we'll let the getDocument function handle authorization
-	// since some documents might be public
+	// Get the promises but don't await them - pass them to the client component
+	const documentPromise = getDocument(params.id);
+	
+	// For edit permission, we need the user ID, so we handle this conditionally
+	const canEditPromise = session?.user 
+		? canUserEditDocument(params.id, session.user.id)
+		: Promise.resolve(false);
 
-	try {
-		// Fetch document data on server
-		const document = await getDocument(params.id);
-
-		if (!document) {
-			notFound();
-		}
-
-		// Check if user can edit
-		const canEdit = session?.user 
-			? await canUserEditDocument(params.id, session.user.id)
-			: false;
-
-		return (
+	return (
+		<ErrorBoundary>
 			<Suspense
 				fallback={
 					<div className="container mx-auto py-8 px-4 max-w-6xl">
@@ -44,18 +38,11 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
 				}
 			>
 				<DocumentClient 
-					document={document} 
-					canEdit={canEdit}
+					documentPromise={documentPromise} 
+					canEditPromise={canEditPromise}
 					user={session?.user || null}
 				/>
 			</Suspense>
-		);
-	} catch (error) {
-		console.error("Error loading document:", error);
-		// If it's an access denied error, redirect to sign in
-		if (error instanceof Error && error.message.includes("Access denied")) {
-			redirect("/auth/signin");
-		}
-		notFound();
-	}
+		</ErrorBoundary>
+	);
 }

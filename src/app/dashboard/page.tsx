@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { auth } from "@/src/lib/auth";
 import { getUserDocuments } from "@/src/lib/data";
 import { DashboardClient } from "./dashboard-client";
+import { ErrorBoundary } from "@/src/components/error-boundary";
 
 export default async function DashboardPage() {
 	// Check authentication on server
@@ -15,20 +16,22 @@ export default async function DashboardPage() {
 		redirect("/auth/signin");
 	}
 
-	// Fetch user's documents on server
-	const documents = await getUserDocuments(session.user.id);
+	// Get the promise but don't await it - pass it to the client component
+	const documentsPromise = getUserDocuments(session.user.id);
 
 	return (
-		<Suspense
-			fallback={
-				<div className="container mx-auto py-8 px-4">
-					<div className="flex items-center justify-center h-64">
-						<div className="text-muted-foreground">Loading your documents...</div>
+		<ErrorBoundary>
+			<Suspense
+				fallback={
+					<div className="container mx-auto py-8 px-4">
+						<div className="flex items-center justify-center h-64">
+							<div className="text-muted-foreground">Loading your documents...</div>
+						</div>
 					</div>
-				</div>
-			}
-		>
-			<DashboardClient documents={documents} user={session.user} />
-		</Suspense>
+				}
+			>
+				<DashboardClient documentsPromise={documentsPromise} user={session.user} />
+			</Suspense>
+		</ErrorBoundary>
 	);
 }

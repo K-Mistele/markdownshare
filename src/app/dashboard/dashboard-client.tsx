@@ -1,5 +1,6 @@
 "use client";
 
+import { use } from "react";
 import { Button } from "@/src/components/ui/button";
 import {
 	Card,
@@ -22,11 +23,11 @@ interface Document {
 	id: string;
 	title: string;
 	content: string;
-	visibility: "public" | "private" | "link_only" | "password_protected";
-	updatedAt: string;
-	authorId: string;
-	createdAt: string;
-	version: number;
+	visibility: string | null;
+	updatedAt: string | null;
+	authorId: string | null;
+	createdAt: string | null;
+	version: number | null;
 }
 
 interface User {
@@ -37,11 +38,15 @@ interface User {
 }
 
 interface DashboardClientProps {
-	documents: Document[];
+	documentsPromise: Promise<Document[]>;
 	user: User;
 }
 
-export function DashboardClient({ documents, user }: DashboardClientProps) {
+export function DashboardClient({ documentsPromise, user }: DashboardClientProps) {
+	// Use the React 19 'use' hook to unwrap the promise
+	// This will suspend the component until the promise resolves
+	const documents = use(documentsPromise);
+
 	// Mock data for collaboration counts - this will be replaced with actual data later
 	const documentsWithMockCollaborators = documents.map((doc) => ({
 		...doc,
@@ -107,13 +112,13 @@ export function DashboardClient({ documents, user }: DashboardClientProps) {
 											{doc.title}
 										</CardTitle>
 										<CardDescription className="mt-1">
-											{new Date(doc.updatedAt).toLocaleDateString()}
+											{doc.updatedAt ? new Date(doc.updatedAt).toLocaleDateString() : 'Unknown date'}
 										</CardDescription>
 									</div>
 									<div className="flex items-center gap-2 text-muted-foreground">
-										{getVisibilityIcon(doc.visibility)}
+										{getVisibilityIcon(doc.visibility || 'private')}
 										<span className="text-xs">
-											{getVisibilityText(doc.visibility)}
+											{getVisibilityText(doc.visibility || 'private')}
 										</span>
 									</div>
 								</div>
