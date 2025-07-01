@@ -2,10 +2,11 @@ import { auth } from "@/src/lib/auth";
 import {
 	canUserAccessDocument,
 	canUserEditDocument,
-	deleteDocument,
 	getDocument,
-	updateDocument,
-} from "@/src/lib/database";
+} from "@/src/lib/data";
+import { db } from "@/src/lib/db";
+import { documents } from "@/src/lib/db/schema";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 
@@ -59,6 +60,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
+		// Check if user can edit this document
 		const canEdit = await canUserEditDocument(params.id, session.user.id);
 		if (!canEdit) {
 			return NextResponse.json({ error: "Access denied" }, { status: 403 });
@@ -67,12 +69,19 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 		const body = await request.json();
 		const { title, content, visibility } = body;
 
-		const updates: any = { updated_at: new Date().toISOString() };
+		const updates: any = { updatedAt: new Date().toISOString() };
 		if (title !== undefined) updates.title = title;
 		if (content !== undefined) updates.content = content;
 		if (visibility !== undefined) updates.visibility = visibility;
 
-		const document = await updateDocument(params.id, updates);
+		// Direct database update
+		const result = await db
+			.update(documents)
+			.set(updates)
+			.where(eq(documents.id, params.id))
+			.returning();
+
+		const document = result[0];
 		if (!document) {
 			return NextResponse.json(
 				{ error: "Failed to update document" },
@@ -100,6 +109,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
+		// Check if document exists and get its author
 		const document = await getDocument(params.id);
 		if (!document) {
 			return NextResponse.json(
@@ -109,17 +119,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 		}
 
 		// Only the author can delete a document
-		if (document.author_id !== session.user.id) {
+		if (document.authorId !== session.user.id) {
 			return NextResponse.json({ error: "Access denied" }, { status: 403 });
 		}
 
-		const success = await deleteDocument(params.id);
-		if (!success) {
-			return NextResponse.json(
-				{ error: "Failed to delete document" },
-				{ status: 500 },
-			);
-		}
+		// Direct database delete
+		await db.delete(documents).where(eq(documents.id, params.id));
 
 		return NextResponse.json({ success: true });
 	} catch (error) {
