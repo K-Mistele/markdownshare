@@ -17,9 +17,10 @@ export function DashboardClient({ documentsPromise }: DashboardClientProps) {
     const documents = use(documentsPromise)
 
     // Mock data for collaboration counts - this will be replaced with actual data later
+    // Use deterministic values based on document ID to avoid hydration mismatches
     const documentsWithMockCollaborators = documents.map((doc) => ({
         ...doc,
-        collaborators: Math.floor(Math.random() * 5) + 1 // Random number for demo
+        collaborators: ((doc.id.charCodeAt(0) + doc.id.charCodeAt(doc.id.length - 1)) % 5) + 1
     }))
 
     const getVisibilityIcon = (visibility: string) => {

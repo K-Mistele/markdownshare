@@ -75,16 +75,38 @@ const components: MDXComponents = {
         const match = /language-(\w+)/.exec(className || '')
         const language = match ? match[1] : ''
 
+        // Parse filename from different syntax formats
+        let filename = ''
+
+        // Format 1: language:filename (e.g., typescript:somefile.ts)
+        const colonMatch = /language-(\w+):(.+)/.exec(className || '')
+        if (colonMatch) {
+            filename = colonMatch[2]
+        }
+
+        // Format 2: language filename=filename (e.g., typescript filename=somefile.ts)
+        const filenameMatch = /language-(\w+).*filename=([^\s]+)/.exec(className || '')
+        if (filenameMatch) {
+            filename = filenameMatch[2]
+        }
+
         if (language) {
             return (
-                <SyntaxHighlighter
-                    style={vscDarkPlus as any}
-                    language={language}
-                    PreTag="div"
-                    className="rounded-lg !my-6"
-                >
-                    {String(children).replace(/\n$/, '')}
-                </SyntaxHighlighter>
+                <div className="relative">
+                    <SyntaxHighlighter
+                        style={vscDarkPlus as any}
+                        language={language}
+                        PreTag="div"
+                        className="rounded-lg !my-6"
+                    >
+                        {String(children).replace(/\n$/, '')}
+                    </SyntaxHighlighter>
+                    {filename && (
+                        <div className="absolute top-2 right-2 px-2 py-1 text-xs bg-black/20 text-white rounded border border-white/10">
+                            {filename}
+                        </div>
+                    )}
+                </div>
             )
         }
 
