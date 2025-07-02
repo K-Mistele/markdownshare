@@ -1,20 +1,10 @@
 "use client";
 
-import { MDXContent } from "@/src/components/mdx/mdx-content";
-import { Button } from "@/src/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from "@/src/components/ui/card";
-import {
-	Tabs,
-	TabsContent,
-	TabsList,
-	TabsTrigger,
-} from "@/src/components/ui/tabs";
-import { cn, debounce } from "@/src/lib/utils";
+import { MDXContent } from "@/components/mdx/mdx-content";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn, debounce } from "@/lib/utils";
 import { EditIcon, EyeIcon, SaveIcon, ShareIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 

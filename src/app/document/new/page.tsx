@@ -1,7 +1,7 @@
 "use client";
 
-import { MarkdownEditor } from "@/src/components/editor/markdown-editor";
-import { authClient } from "@/src/lib/auth-client";
+import { MarkdownEditor } from "@/components/editor/markdown-editor";
+import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 

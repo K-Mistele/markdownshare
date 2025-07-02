@@ -1,13 +1,9 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
-import * as schema from "./schema";
+import 'dotenv/config'
+import { drizzle } from 'drizzle-orm/postgres-js'
+import postgres from 'postgres'
+import * as schema from './schema'
 
-const connectionString = process.env.DATABASE_URL;
-
-const pool = new Pool({
-	connectionString,
-});
-
-export const db = drizzle(pool, { schema });
-
-export type DB = typeof db;
+console.log(process.env.DATABASE_URL)
+// Disable prefetch as it is not supported for "Transaction" pool mode
+const client = postgres(process.env.DATABASE_URL!, { prepare: false })
+export const db = drizzle(client, { schema })

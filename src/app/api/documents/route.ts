@@ -1,7 +1,7 @@
-import { auth } from "@/src/lib/auth";
-import { getUserDocuments } from "@/src/lib/data";
-import { db } from "@/src/lib/db";
-import { documents } from "@/src/lib/db/schema";
+import { auth } from "@/lib/auth";
+import { getUserDocuments } from "@/lib/data";
+import { db } from "@/lib/db";
+import { documents } from "@/lib/db/schema";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 

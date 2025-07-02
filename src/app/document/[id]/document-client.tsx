@@ -1,9 +1,8 @@
 "use client";
 
-import { use } from "react";
-import { MarkdownEditor } from "@/src/components/editor/markdown-editor";
-import { updateDocument } from "@/src/lib/actions";
-import { useState } from "react";
+import { MarkdownEditor } from "@/components/editor/markdown-editor";
+import { updateDocument } from "@/lib/actions";
+import { use, useState } from "react";
 
 interface Document {
 	id: string;
@@ -28,7 +27,11 @@ interface DocumentClientProps {
 	user: User | null;
 }
 
-export function DocumentClient({ documentPromise, canEditPromise, user }: DocumentClientProps) {
+export function DocumentClient({
+	documentPromise,
+	canEditPromise,
+	user,
+}: DocumentClientProps) {
 	const [saving, setSaving] = useState(false);
 
 	// Use the React 19 'use' hook to unwrap the promises
@@ -52,11 +55,11 @@ export function DocumentClient({ documentPromise, canEditPromise, user }: Docume
 		setSaving(true);
 		try {
 			// Use server action for updating document directly
-			const updatedDocument = await updateDocument(document.id, { 
-				title, 
-				content 
+			const updatedDocument = await updateDocument(document.id, {
+				title,
+				content,
 			});
-			
+
 			if (updatedDocument) {
 				setLocalDocument(updatedDocument);
 			} else {
@@ -73,7 +76,7 @@ export function DocumentClient({ documentPromise, canEditPromise, user }: Docume
 	const handleContentChange = (content: string) => {
 		// This will handle real-time synchronization in the future
 		// For now, we'll just update local state
-		setLocalDocument(prev => ({ ...prev, content }));
+		setLocalDocument((prev) => ({ ...prev, content }));
 	};
 
 	return (

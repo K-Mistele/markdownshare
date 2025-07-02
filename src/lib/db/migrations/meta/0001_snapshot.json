@@ -1,6 +1,6 @@
 {
-  "id": "e5fa8466-8609-4abf-9a74-bb9604694ffd",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "43ba1200-6eb0-4b1f-af6e-2b996e5cf282",
+  "prevId": "e5fa8466-8609-4abf-9a74-bb9604694ffd",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -717,8 +717,7 @@
           "name": "email_verified",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": true,
-          "default": false
+          "notNull": true
         },
         "image": {
           "name": "image",
@@ -730,15 +729,13 @@
           "name": "created_at",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+          "notNull": true
         },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+          "notNull": true
         },
         "avatar_url": {
           "name": "avatar_url",
@@ -873,15 +870,13 @@
           "name": "created_at",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
+          "notNull": false
         },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
+          "notNull": false
         }
       },
       "indexes": {},
